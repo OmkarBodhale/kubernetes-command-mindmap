@@ -363,7 +363,7 @@ If those three work, everything in this repository will work.
 
 ## 🔗 Related
 
-- **[k8s-concepts-visualized](https://github.com/cloud-prakhar/k8s-concepts-visualized)** — the *concepts* companion to this repo. This repo teaches the commands; that one teaches why Kubernetes works the way it does. Where theory would bloat a command page here, it links there.
+- **[k8s-concepts-visualized](https://github.com/OmkarBodhale/k8s-concepts-visualized)** — the *concepts* companion to this repo. This repo teaches the commands; that one teaches why Kubernetes works the way it does. Where theory would bloat a command page here, it links there.
 - [Official kubectl reference](https://kubernetes.io/docs/reference/kubectl/)
 - [Official kubectl cheat sheet](https://kubernetes.io/docs/reference/kubectl/quick-reference/)
 
