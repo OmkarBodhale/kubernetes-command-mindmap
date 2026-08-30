@@ -1,0 +1,29 @@
+# There is no `kubectl create pvc` — PVCs are declarative only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data
+spec:
+  accessModes:
+    - ReadWriteOnce              # ⚠️ ONE NODE, not one Pod. Several Pods on the
+                                 # same node can share it; a Pod elsewhere cannot.
+                                 # For multi-node writes you need ReadWriteMany
+                                 # (EFS / Azure Files / Filestore / NFS).
+  storageClassName: gp3          # omit to use the cluster default —
+                                 # ⚠️ if NO class is marked (default), the PVC
+                                 # stays Pending forever with no clear error
+  resources:
+    requests:
+      storage: 10Gi              # ⚠️ volumes can only GROW, never shrink
+
+# Check which class is the default:
+#   kubectl get sc
+#
+# "waiting for first consumer to be created" is NORMAL — WaitForFirstConsumer
+# binding delays creation until a Pod is scheduled, so the volume lands in the
+# right availability zone.
+#
+# ⚠️ Before deleting this claim, check what happens to the data:
+#   kubectl get pvc data -o jsonpath='{.spec.volumeName}'
+#   kubectl get pv <pv-name> -o jsonpath='{.spec.persistentVolumeReclaimPolicy}'
+# `Delete` — the cloud default — DESTROYS the underlying disk.

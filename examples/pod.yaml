@@ -1,0 +1,36 @@
+# Generate the skeleton yourself:
+#   kubectl run web --image=nginx:1.27 --port=80 --dry-run=client -o yaml
+#
+# ⚠️ A bare Pod has NOTHING managing it. If its node dies, the Pod is gone
+# for good. Use this for testing only — real workloads belong in a Deployment.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  containers:
+    - name: web
+      image: nginx:1.27          # always pin a tag — never :latest
+      ports:
+        - containerPort: 80
+      resources:
+        requests:                # what the SCHEDULER reserves
+          cpu: 100m
+          memory: 128Mi
+        limits:                  # the kernel's hard ceiling
+          cpu: 500m
+          memory: 256Mi          # exceeding this = OOMKilled
+      readinessProbe:            # gates Service endpoints
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 10
+      livenessProbe:             # failing this RESTARTS the container
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 15  # give the app time to boot
+        periodSeconds: 20

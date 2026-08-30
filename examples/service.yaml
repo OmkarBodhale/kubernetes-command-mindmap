@@ -1,0 +1,23 @@
+# Generate the skeleton yourself:
+#   kubectl expose deployment web --port=80 --target-port=80 \
+#     --dry-run=client -o yaml > service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  type: ClusterIP                # internal only — the right default.
+                                 # NodePort / LoadBalancer only when needed;
+                                 # LoadBalancer creates a billable cloud LB.
+  selector:
+    app: web                     # ⚠️ MUST match the Pod labels, or endpoints
+                                 #    will be <none> with no error at all
+  ports:
+    - name: http
+      port: 80                   # the port CLIENTS call
+      targetPort: 80             # the port the CONTAINER listens on
+      protocol: TCP
+
+# Verify it worked — this is the command that matters:
+#   kubectl get endpoints web
+# <none> means the selector matched nothing, or no Pod is Ready.

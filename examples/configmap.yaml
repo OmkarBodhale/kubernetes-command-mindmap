@@ -1,0 +1,26 @@
+# Generate the skeleton yourself:
+#   kubectl create configmap app-config \
+#     --from-literal=LOG_LEVEL=info --dry-run=client -o yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # Simple key/value — usable as env vars
+  LOG_LEVEL: "info"
+  MAX_CONNECTIONS: "100"
+  API_URL: "http://api.default.svc.cluster.local"
+
+  # A whole file — usable as a mounted volume
+  app.properties: |
+    server.port=8080
+    server.timeout=30s
+
+# ⚠️ Changing this does NOT restart your Pods.
+#   - env vars are frozen at container start and NEVER reload
+#   - mounted files update in ~60s, but not with subPath mounts
+# Follow every change with:
+#   kubectl rollout restart deployment/web
+#
+# 💡 Better pattern: version the name (app-config-v2) and change it in the
+# Deployment. The template changes, so a rollout happens automatically.

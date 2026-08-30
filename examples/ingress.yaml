@@ -1,0 +1,47 @@
+# Generate the skeleton yourself:
+#   kubectl create ingress web --class=nginx \
+#     --rule="shop.example.com/*=web:80" --dry-run=client -o yaml
+#
+# ⚠️ Kubernetes does NOT ship an Ingress Controller. Without one installed,
+# this object is valid, ADDRESS stays empty, and nothing ever routes.
+# Check first:  kubectl get ingressclass
+apiVersion: networking.k8s.io/v1     # NOT extensions/v1beta1 — removed in v1.22
+kind: Ingress
+metadata:
+  name: web
+  annotations:
+    # ⚠️ Annotations are controller-specific and NOT portable. The ALB
+    # controller silently ignores nginx annotations, and vice versa.
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx            # which controller handles this
+  tls:
+    - hosts:
+        - shop.example.com
+      secretName: web-tls            # must be type kubernetes.io/tls,
+                                     # and in THIS namespace
+  rules:
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix         # ⚠️ Prefix, not Exact. `Exact` 404s on
+            backend:                 #    every sub-path with no warning.
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+
+# Create the TLS Secret first:
+#   kubectl create secret tls web-tls --cert=./tls.crt --key=./tls.key
+#
+# Test before DNS exists:
+#   curl -H "Host: shop.example.com" http://<ingress-address>/

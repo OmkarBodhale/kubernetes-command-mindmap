@@ -1,0 +1,53 @@
+# Generate the skeleton yourself:
+#   kubectl create deployment web --image=nginx:1.27 --replicas=3 \
+#     --port=80 --dry-run=client -o yaml > deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web                   # ⚠️ IMMUTABLE after creation, and it MUST
+  template:                      #    match .spec.template.metadata.labels below
+    metadata:
+      labels:
+        app: web                 # ← the Service selector targets this too
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27
+          ports:
+            - containerPort: 80  # this is the Service's targetPort
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi      # always set a memory limit
+              # cpu limit deliberately omitted — CPU throttling causes
+              # latency spikes even on an idle node. See 13-resource-management.md
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: db-secret
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                # one extra Pod allowed during a rollout
+      maxUnavailable: 0          # never drop below the desired count
+  revisionHistoryLimit: 10       # ⚠️ setting this to 0 destroys `rollout undo`

@@ -1,0 +1,35 @@
+# Generate the skeleton yourself:
+#   kubectl create job migrate --image=busybox:1.36 \
+#     --dry-run=client -o yaml -- /bin/sh -c 'echo migrating'
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+spec:
+  backoffLimit: 4                # retries before the Job is marked Failed
+  activeDeadlineSeconds: 600     # hard timeout regardless of retries
+  ttlSecondsAfterFinished: 3600  # auto-delete 1h after finishing.
+                                 # ⚠️ the LOGS go with it — set this long
+                                 # enough to investigate failures.
+  # completions: 10              # how many successful Pods are needed
+  # parallelism: 3               # how many may run at once
+  template:
+    spec:
+      restartPolicy: Never       # or OnFailure. `Always` is REJECTED in a Job.
+      containers:
+        - name: migrate
+          image: busybox:1.36
+          command: ["/bin/sh", "-c", "echo 'running migration'; sleep 5"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+
+# Find the Pods this Job created (names are randomly suffixed):
+#   kubectl get pods -l job-name=migrate
+#   kubectl logs -l job-name=migrate --tail=100
+#
+# Wait for it in a pipeline:
+#   kubectl wait --for=condition=complete job/migrate --timeout=600s
